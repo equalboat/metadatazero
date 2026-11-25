@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect, type ReactNode } from "react";
+import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { pictureDir } from "@tauri-apps/api/path";
 import { listen } from "@tauri-apps/api/event";
-import { check } from "@tauri-apps/plugin-updater";
+import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { open } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
@@ -20,6 +20,12 @@ import {
 } from "./metadata";
 
 type SaveMode = 'copy' | 'overwrite';
+
+type UpdateStatus =
+  | { state: 'checking' | 'current' | 'downloading' | 'ready' }
+  | { state: 'available'; update: Update }
+  | { state: 'error'; message: string };
+
 
 interface FileItem {
   path: string;
@@ -94,7 +100,9 @@ function App() {
   const [exportPath, setExportPath] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<'none' | 'downloading' | 'ready'>('none');
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const updateBusy = useRef(false);
+  const showUpdateResult = useRef(false);
   const [version, setVersion] = useState('');
   const [updatesSupported, setUpdatesSupported] = useState(false);
   const [preservationOptions, setPreservationOptions] = useState<PreservationOptions>(() =>
@@ -103,7 +111,7 @@ function App() {
     loadJson<{ autoUpdate: boolean | null }>('appSettings', { autoUpdate: null }).autoUpdate);
   const [saveMode, setSaveMode] = useState<SaveMode>(() =>
     localStorage.getItem('saveMode') === 'overwrite' ? 'overwrite' : 'copy');
-  const askUpdates = updatesSupported && autoUpdate === null;
+  const askUpdates = updatesSupported && autoUpdate === null && !updateStatus;
 
   useEffect(() => {
     localStorage.setItem('preservationOptions', JSON.stringify(preservationOptions));
@@ -122,22 +130,73 @@ function App() {
     invoke<boolean>("updates_supported").then(setUpdatesSupported);
   }, []);
 
-  useEffect(() => {
-    if (!autoUpdate || !updatesSupported) return;
-    (async () => {
-      try {
-        const update = await check();
-        if (update) {
-          setUpdateStatus('downloading');
-          await update.downloadAndInstall();
-          setUpdateStatus('ready');
-        }
-      } catch (error) {
-        console.error('Failed to check for updates:', error);
-        setUpdateStatus('none');
+  const checkForUpdates = useCallback(async (manual = true) => {
+    if (!updatesSupported || updateStatus?.state === 'available' || updateStatus?.state === 'ready') return;
+    if (manual) showUpdateResult.current = true;
+    if (updateBusy.current) {
+      if (manual) setUpdateStatus((status) => status ?? { state: 'checking' });
+      return;
+    }
+    updateBusy.current = true;
+    if (manual) setUpdateStatus({ state: 'checking' });
+    try {
+      const update = await check({ timeout: 15_000 });
+      if (update) {
+        setShowSettings(false);
+        setUpdateStatus({ state: 'available', update });
+      } else if (showUpdateResult.current) {
+        setShowSettings(false);
+        setUpdateStatus({ state: 'current' });
       }
-    })();
-  }, [autoUpdate, updatesSupported]);
+    } catch (error) {
+      console.error('Failed to check for updates:', error);
+      if (showUpdateResult.current) {
+        setShowSettings(false);
+        setUpdateStatus({ state: 'error', message: 'Could not check GitHub for updates. Try again in a moment.' });
+      }
+    } finally {
+      updateBusy.current = false;
+      showUpdateResult.current = false;
+    }
+  }, [updatesSupported, updateStatus?.state]);
+
+  useEffect(() => {
+    const unlisten = listen("check-for-updates", () => void checkForUpdates());
+    return () => { void unlisten.then((stop) => stop()); };
+  }, [checkForUpdates]);
+
+  const checkedAtStartup = useRef(false);
+  useEffect(() => {
+    if (autoUpdate && updatesSupported && !checkedAtStartup.current) {
+      checkedAtStartup.current = true;
+      void checkForUpdates(false);
+    }
+  }, [autoUpdate, updatesSupported, checkForUpdates]);
+
+  const dismissUpdate = () => {
+    if (updateStatus?.state === 'available') {
+      void updateStatus.update.close().catch(console.error);
+    }
+    setUpdateStatus(null);
+  };
+
+  const installUpdate = async () => {
+    if (updateStatus?.state !== 'available' || updateBusy.current || processing) return;
+    const { update } = updateStatus;
+    updateBusy.current = true;
+    setUpdateStatus({ state: 'downloading' });
+    try {
+      await update.downloadAndInstall();
+      setUpdateStatus({ state: 'ready' });
+    } catch (error) {
+      console.error('Failed to install the update:', error);
+      setUpdateStatus({ state: 'error', message: 'Could not install the update. Check that Stillgrain is in a writable Applications folder, then try again.' });
+    } finally {
+      await update.close().catch(console.error);
+      updateBusy.current = false;
+      showUpdateResult.current = false;
+    }
+  };
 
   const restartNow = async () => {
     try {
@@ -253,7 +312,7 @@ function App() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Delete' && event.key !== 'Backspace') return;
-      if (!selectedPath || exportPath === selectedPath || processing || showSettings || askUpdates) return;
+      if (!selectedPath || exportPath === selectedPath || processing || showSettings || askUpdates || updateStatus) return;
       if (event.target instanceof HTMLInputElement) return;
       event.preventDefault();
       removeFile(selectedPath);
@@ -405,6 +464,10 @@ function App() {
           onSaveMode={setSaveMode}
           autoUpdate={updatesSupported ? autoUpdate === true : null}
           onAutoUpdate={setAutoUpdate}
+          onCheckForUpdates={() => {
+            setShowSettings(false);
+            void checkForUpdates();
+          }}
           exampleName={copyName(selected?.name ?? 'name.jpg')}
           version={version}
           onClose={() => setShowSettings(false)}
@@ -424,16 +487,36 @@ function App() {
         </div>
       )}
 
-      {updateStatus === 'downloading' && (
-        <div className="toast">Downloading update…</div>
-      )}
-
-      {updateStatus === 'ready' && (
-        <div className="toast">
-          Update ready
-          <button className="btn" onClick={restartNow}>Restart now</button>
+      {updateStatus && (
+        <div className="scrim centered">
+          <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="update-title">
+            <h2 id="update-title">Stillgrain updates</h2>
+            <p className="dialog-text" role="status">
+              {updateStatus.state === 'checking' && 'Checking GitHub for updates…'}
+              {updateStatus.state === 'current' && 'You’re up to date.'}
+              {updateStatus.state === 'available' && `Stillgrain ${updateStatus.update.version} is available.`}
+              {updateStatus.state === 'downloading' && 'Downloading and verifying the update…'}
+              {updateStatus.state === 'ready' && 'Update installed. Restart Stillgrain to finish.'}
+              {updateStatus.state === 'error' && updateStatus.message}
+            </p>
+            <div className="dialog-buttons">
+              {updateStatus.state === 'available' && (
+                <>
+                  <button className="btn btn-large" onClick={dismissUpdate}>Later</button>
+                  <button className="btn-primary" disabled={processing} onClick={() => void installUpdate()}>Install update</button>
+                </>
+              )}
+              {updateStatus.state === 'ready' && (
+                <button className="btn-primary" disabled={processing} onClick={() => void restartNow()}>Restart Stillgrain</button>
+              )}
+              {(updateStatus.state === 'current' || updateStatus.state === 'error') && (
+                <button className="btn btn-large" onClick={dismissUpdate}>Done</button>
+              )}
+            </div>
+          </div>
         </div>
       )}
+
     </div>
   );
 }
@@ -624,7 +707,7 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (on: boolean) 
 }
 
 function SettingsSheet({
-  preservation, onPreservation, saveMode, onSaveMode, autoUpdate, onAutoUpdate, exampleName, version, onClose,
+  preservation, onPreservation, saveMode, onSaveMode, autoUpdate, onAutoUpdate, onCheckForUpdates, exampleName, version, onClose,
 }: {
   preservation: PreservationOptions;
   onPreservation: (options: PreservationOptions) => void;
@@ -632,6 +715,7 @@ function SettingsSheet({
   onSaveMode: (mode: SaveMode) => void;
   autoUpdate: boolean | null;
   onAutoUpdate: (on: boolean) => void;
+  onCheckForUpdates: () => void;
   exampleName: string;
   version: string;
   onClose: () => void;
@@ -693,6 +777,9 @@ function SettingsSheet({
         {autoUpdate !== null && (
           <>
             <h3 className="heading sheet-section">Updates</h3>
+            <div className="setting-row">
+              <button className="btn" onClick={onCheckForUpdates}>Check for Updates…</button>
+            </div>
             <div className="setting-row">
               <div className="setting-text">
                 <span className="setting-title">Check for updates automatically</span>

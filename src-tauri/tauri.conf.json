@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Stillgrain",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "identifier": "com.metadatazero.localoptimize",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -43,8 +43,10 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM1QzNFRjM3MkVFOEU1RUYKUldUdjVlZ3VOKy9ETmVERU5yV1RVOUNuN05SR0FMd1pacmVlMURZK0lyVVlrNUkrQ2g1RVYvZlEK",
-      "endpoints": [],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMzRTc5OUY2RDlERjlCMTYKUldRV205L1o5cG5ud3pqOFA1NEw0TFkrbTNheWFUOEo0SmFkRzRSZnl3ak5MWHFkYXIveXp3U1oK",
+      "endpoints": [
+        "https://github.com/equalboat/metadatazero/releases/latest/download/latest.json"
+      ],
       "windows": {
         "installMode": "passive"
       }

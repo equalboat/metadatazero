@@ -56,7 +56,9 @@ Stillgrain gives you control over this information with a simple drag-and-drop i
 
 ## Download
 
-The [image-optimization branch](https://github.com/equalboat/metadatazero/tree/image-optimization) contains the source. See [Development](#development) for build instructions. Stillgrain processes files locally.
+Download the Apple Silicon Mac build from [GitHub Releases](https://github.com/equalboat/metadatazero/releases). The [image-optimization branch](https://github.com/equalboat/metadatazero/tree/image-optimization) contains the source.
+
+In the macOS menu bar, choose **Stillgrain → Check for Updates…**. Stillgrain checks GitHub Releases for a newer version, verifies the update signature before installing, and prompts you to restart. **Settings → Updates** also has a manual check and an optional startup check.
 
 ## File Support
 

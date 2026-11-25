@@ -5,7 +5,7 @@ import { VERSION, parseArgs, updaterFor } from './targets.ts';
 const { bundleDir, os, arch } = parseArgs();
 
 // Must stay in sync with plugins.updater.endpoints in src-tauri/tauri.conf.json.
-const GITHUB_REPO = 'metadatazero/metadatazero';
+const GITHUB_REPO = process.env.GITHUB_REPOSITORY ?? 'equalboat/metadatazero';
 
 const updater = updaterFor(os, arch);
 const signaturePath = path.join(bundleDir, updater.dir, `${updater.file}.sig`);

@@ -90,6 +90,14 @@ pub fn run() {
                 use tauri::menu::{MenuBuilder, MenuItem, PredefinedMenuItem, Submenu};
 
                 let settings_item = MenuItem::with_id(app, "settings", "Settings...", true, Some("Cmd+,"))?;
+                let check_updates_item = MenuItem::with_id(
+                    app,
+                    "check-for-updates",
+                    "Check for Updates…",
+                    commands::updates_supported(app.handle().clone()),
+                    None::<&str>,
+                )?;
+
 
                 let app_menu = Submenu::with_items(
                     app,
@@ -99,6 +107,7 @@ pub fn run() {
                         &PredefinedMenuItem::about(app, None, None)?,
                         &PredefinedMenuItem::separator(app)?,
                         &settings_item,
+                        &check_updates_item,
                         &PredefinedMenuItem::separator(app)?,
                         &PredefinedMenuItem::hide(app, None)?,
                         &PredefinedMenuItem::hide_others(app, None)?,
@@ -146,6 +155,8 @@ pub fn run() {
                 app.on_menu_event(move |app, event| {
                     if event.id() == "settings" {
                         let _ = app.emit("open-settings", ());
+                    } else if event.id() == "check-for-updates" {
+                        let _ = app.emit("check-for-updates", ());
                     }
                 });
             }
