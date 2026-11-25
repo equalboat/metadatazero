@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MetadataZero",
+  "productName": "Stillgrain",
   "version": "1.1.0",
-  "identifier": "com.metadatazero",
+  "identifier": "com.metadatazero.localoptimize",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "MetadataZero",
+        "title": "Stillgrain",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
@@ -33,16 +33,18 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["binaries/**/*"],
-    "externalBin": ["binaries/exiftool"],
+    "resources": [
+      "binaries/**/*"
+    ],
+    "externalBin": [
+      "binaries/exiftool"
+    ],
     "createUpdaterArtifacts": true
   },
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM1QzNFRjM3MkVFOEU1RUYKUldUdjVlZ3VOKy9ETmVERU5yV1RVOUNuN05SR0FMd1pacmVlMURZK0lyVVlrNUkrQ2g1RVYvZlEK",
-      "endpoints": [
-        "https://github.com/metadatazero/metadatazero/releases/latest/download/latest.json"
-      ],
+      "endpoints": [],
       "windows": {
         "installMode": "passive"
       }

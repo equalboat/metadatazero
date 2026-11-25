@@ -1,6 +1,6 @@
-# MetadataZero
+# Stillgrain
 
-> A free, modern, cross-platform desktop application for removing metadata from photos, videos, and PDF files with privacy in mind.
+> Crop, compress, and remove metadata from images on your device. Stillgrain is based on [MetadataZero](https://github.com/metadatazero/metadatazero).
 
 ## Table of Contents
 
@@ -8,9 +8,8 @@
 - [Features](#features)
 - [Demo](#demo)
 - [Download](#download)
-- [Homebrew](#homebrew-macos)
 - [File Support](#file-support)
-- [MetadataZero vs ExifCleaner](#metadatazero-vs-exifcleaner)
+- [Stillgrain vs ExifCleaner](#stillgrain-vs-exifcleaner)
 - [Quick Start](#quick-start)
 - [Remove metadata and optimize images](#remove-metadata-and-optimize-images)
 - [Development](#development)
@@ -21,7 +20,7 @@
 
 ## Overview
 
-MetadataZero is a privacy-focused desktop application that helps you protect your personal information by removing embedded metadata from your files. Built with Rust, React, and TypeScript, it combines the power of ExifTool with a modern, intuitive interface.
+Stillgrain is a privacy-focused desktop application that helps you protect your personal information by removing embedded metadata from your files. Built with Rust, React, and TypeScript, it combines the power of ExifTool with a modern, intuitive interface.
 
 **Why Remove Metadata?**
 
@@ -32,7 +31,7 @@ Photos, videos, and documents often contain hidden metadata that can reveal:
 - Timestamps and user information
 - Copyright and ownership data
 
-MetadataZero gives you control over this information with a simple drag-and-drop interface.
+Stillgrain gives you control over this information with a simple drag-and-drop interface.
 
 ## Features
 
@@ -53,44 +52,23 @@ MetadataZero gives you control over this information with a simple drag-and-drop
 ## Demo
 
 
-![MetadataZero demo](./assets/demo.gif)
+![Original MetadataZero workflow](./assets/demo.gif)
 
 ## Download
 
-MetadataZero is available for macOS, Windows, and Linux.
-
-| Platform | File Type | Important Notes |
-|---------|-----------|----------------|
-| **macOS** | `.dmg` / `.app` | **Unsigned. Gatekeeper will block it.** To run it: `xattr -dr com.apple.quarantine /Applications/MetadataZero.app` |
-| **Windows** | `.exe` / `.msi` | **Unsigned.** Windows SmartScreen will warn. Click “Run anyway.” |
-| **Linux** | `.AppImage` / `.deb` / `.rpm` / `.flatpak` | For AppImage: `chmod +x MetadataZero.AppImage` |
-
-Download here: **https://github.com/metadatazero/metadatazero/releases**
-
-No internet connection is required after installation.
-All processing is performed **locally on your device** for maximum privacy.
-
-## Homebrew (macOS)
-
-MetadataZero is also available through a dedicated Homebrew tap:
-
-```bash
-brew tap metadatazero/tap
-brew install --cask metadatazero
-xattr -dr com.apple.quarantine /Applications/MetadataZero.app
-```
+The [image-optimization branch](https://github.com/equalboat/metadatazero/tree/image-optimization) contains the source. See [Development](#development) for build instructions. Stillgrain processes files locally.
 
 ## File Support
 
-List of file formats for which MetadataZero is capable of removing at least one metadata field:
+List of file formats for which Stillgrain is capable of removing at least one metadata field:
 
 3G2, 3GP2, 3GP, 3GPP, AAX, AI, AIT, ARQ, ARW, AVIF, CR2, CR3, CRM, CRW, CIFF, CS1, DCP, DNG, DR4, DVB, EPS, EPSF, PS, ERF, EXV, F4A, F4B, F4P, F4V, FFF, FLIF, GIF, GPR, HDP, WDP, JXR, HEIC, HEIF, IIQ, IND, INDD, INDT, INSP, JP2, JPF, JPM, JPX, JPEG, JPG, JPE, LRV, M4A, M4B, M4P, M4V, MEF, MIE, MOS, MOV, QT, MP4, MPO, MQV, NEF, NRW, ORF, PDF, PEF, PNG, JNG, MNG, PPM, PBM, PGM, PSD, PSB, PSDT, QTIF, QTI, QIF, RAF, RAW, RW2, RWL, SR2, SRW, THM, TIFF, TIF, X3F, WEBP.
 
 For the complete list of supported file types with technical details, see [ExifTool Supported File Types](https://exiftool.org/#supported).
 
-## MetadataZero vs ExifCleaner
+## Stillgrain vs ExifCleaner
 
-| Feature / Capability             | MetadataZero                                   | ExifCleaner                         |
+| Feature / Capability             | Stillgrain                                    | ExifCleaner                         |
 | -------------------------------- | ---------------------------------------------- | ----------------------------------- |
 | Apple Silicon Support            | Native                                         | No                                  |
 | Startup & Performance            | Fast, lightweight                              | Slower to launch, heavier footprint |
@@ -101,16 +79,15 @@ For the complete list of supported file types with technical details, see [ExifT
 | WebP Support                     | Yes                                            | No                                  |
 | TIFF Metadata Cleaning           | Cleans common IFD0 tags                        | Limited                             |
 | Output Safety                    | Always saves new cleaned file                  | Unsafe overwrite                    |
-| Auto Updates                     | Yes (can be disabled)                          | No                                  |
+| Auto Updates                     | Requires an update feed                        | No                                  |
 
 ## Quick Start
 
-1. Download the free installer for your platform
-2. Launch MetadataZero
+1. Build the app using the [development instructions](#development)
+2. Launch Stillgrain
 3. Drag and drop files or folders into the window
-4. (Optional) Click "Settings" to choose what metadata to preserve
-5. Review metadata in the preview panel
-6. Click "Clean" or "Clean All" to remove metadata
+4. Review the metadata for the selected file.
+5. Choose **Remove metadata & optimize** on a supported still image, or use the metadata-only controls.
 
 ## Remove metadata and optimize images
 
@@ -142,6 +119,12 @@ npm install
 npm run tauri dev
 ```
 
+### Building the Mac app
+
+```bash
+npm run tauri build -- --bundles app --config '{"bundle":{"createUpdaterArtifacts":false}}'
+```
+
 ### Tech Stack
 
 - **[Tauri](https://tauri.app/)** - Lightweight desktop framework with Rust backend
@@ -169,7 +152,7 @@ npm run tauri dev
 
 ## Metadata Removal Limitations
 
-Metadata removal is not always absolute. Some formats store metadata in multiple internal structures, and not all of them can be deleted without re-encoding or rebuilding the file. MetadataZero relies on ExifTool, and while it removes standard and commonly identifiable metadata blocks, some embedded information may still remain depending on the format.
+Metadata removal is not always absolute. Some formats store metadata in multiple internal structures, and not all of them can be deleted without re-encoding or rebuilding the file. Stillgrain relies on ExifTool, and while it removes standard and commonly identifiable metadata blocks, some embedded information may still remain depending on the format.
 
 Below is a summary of what to realistically expect:
 
@@ -178,12 +161,12 @@ Below is a summary of what to realistically expect:
 | **JPEG** | Most metadata blocks (APP segments) and trailers | Adobe APP14 segment | Typically results in a near-total clean. |
 | **TIFF** | XMP, IPTC, ICC profile, EXIF IFD | Some EXIF stored in IFD0 | Cleaning may require manually targeting specific fields. |
 | **PNG** | XMP, EXIF, ICC profile, standard text chunks | Non-standard chunks | PNG can contain custom metadata chunks that are not standardized. |
-| **PDF** | XMP, document information, EXIF and GPS of embedded JPEG photos, and the earlier revisions that still hold them | Attachments and metadata inside non-JPEG images | MetadataZero rebuilds the file with QPDF after ExifTool, so removed values cannot be restored. |
+| **PDF** | XMP, document information, EXIF and GPS of embedded JPEG photos, and the earlier revisions that still hold them | Attachments and metadata inside non-JPEG images | Stillgrain rebuilds the file with QPDF after ExifTool, so removed values cannot be restored. |
 | **MOV / MP4** | Most top-level metadata atoms | Embedded or proprietary metadata | Some camera manufacturers store extra metadata blocks in non-standard locations. |
 | **RAW Formats (CR2, NEF, ARW, etc.)** | Standard metadata blocks | **Proprietary camera-specific data** (often required for proper rendering) | Removing everything can break color interpretation, thumbnails, etc. |
 
 **Important:**  
-MetadataZero does **not** remove extended filesystem attributes such as macOS file tags, quarantine flags, Windows ADS streams, or other OS-level metadata. These exist outside the file contents and are controlled by the operating system.
+Stillgrain does **not** remove extended filesystem attributes such as macOS file tags, quarantine flags, Windows ADS streams, or other OS-level metadata. These exist outside the file contents and are controlled by the operating system.
 
 **If your threat model requires guaranteed zero metadata:**  
 You will need **format conversion or full re-encoding**, especially for:

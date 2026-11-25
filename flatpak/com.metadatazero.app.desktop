@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=MetadataZero
+Name=Stillgrain
 GenericName=Metadata Remover
 Comment=Remove metadata from your photos and documents
 Exec=metadatazero %F

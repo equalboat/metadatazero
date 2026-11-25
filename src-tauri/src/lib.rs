@@ -93,7 +93,7 @@ pub fn run() {
 
                 let app_menu = Submenu::with_items(
                     app,
-                    "MetadataZero",
+                    app.config().product_name.as_deref().unwrap_or("Stillgrain"),
                     true,
                     &[
                         &PredefinedMenuItem::about(app, None, None)?,

@@ -271,12 +271,8 @@ function App() {
     <div className="app">
       <header className="top-bar">
         <div className="brand">
-          <svg className="brand-mark" viewBox="0 0 20 20" aria-hidden="true">
-            <rect x="1.9" y="1" width="16.2" height="4.7" fill="currentColor" />
-            <rect x="1.9" y="7.66" width="11.7" height="4.7" fill="#FFE14D" />
-            <rect x="1.9" y="14.3" width="13.5" height="4.7" fill="currentColor" />
-          </svg>
-          <span className="brand-name">MetadataZero</span>
+          <img className="brand-mark" src="/stillgrain.png" alt="" width="28" height="28" />
+          <span className="brand-name">Stillgrain</span>
         </div>
         <div className="top-actions">
           {!isExporting && (
@@ -301,10 +297,10 @@ function App() {
       {files.length === 0 ? (
         <main className={`empty ${dragActive ? 'drag-active' : ''}`}>
           <div className="empty-content">
-            <h1>Drop photos, videos or PDFs</h1>
+            <h1>Prep images for the web</h1>
             <p className="empty-lead">
-              See what they reveal about you, then remove it.<br />
-              Files are processed on this computer and never uploaded.
+              Drop in an image to crop, compress, and remove metadata.<br />
+              Photos, videos, and PDFs can also be cleaned on this device.
             </p>
             <button className="btn-primary empty-choose" onClick={browseFiles}>Choose files</button>
             <div className="specimen">
@@ -710,7 +706,7 @@ function SettingsSheet({
         )}
 
         <p className="sheet-foot">
-          MetadataZero {version}
+          Stillgrain {version}
         </p>
       </div>
     </div>

@@ -143,7 +143,7 @@ fn clean_result(
 // The QPDF build for macOS needs an OpenSSL module it does not ship to decrypt RC4,
 // the encryption older PDF writers used to lock printing or copying.
 const OLD_ENCRYPTION: &str =
-    "This PDF is protected with an old encryption that MetadataZero cannot rewrite yet. The file was not changed.";
+    "This PDF is protected with an old encryption that Stillgrain cannot rewrite yet. The file was not changed.";
 
 const PNG_IMAGE: &[&str] = &[
     "ImageWidth",
@@ -461,7 +461,7 @@ impl ExifToolWrapper {
             Ok(())
         } else {
             Err(format!(
-                "MetadataZero could not remove {} from this PDF. The file was not changed.",
+                "Stillgrain could not remove {} from this PDF. The file was not changed.",
                 left.join(", ")
             ))
         }
