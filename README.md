@@ -12,6 +12,7 @@
 - [File Support](#file-support)
 - [MetadataZero vs ExifCleaner](#metadatazero-vs-exifcleaner)
 - [Quick Start](#quick-start)
+- [Remove metadata and optimize images](#remove-metadata-and-optimize-images)
 - [Development](#development)
 - [How It Works](#how-it-works)
 - [Metadata Removal Limitations](#metadata-removal-limitations)
@@ -110,6 +111,12 @@ For the complete list of supported file types with technical details, see [ExifT
 4. (Optional) Click "Settings" to choose what metadata to preserve
 5. Review metadata in the preview panel
 6. Click "Clean" or "Clean All" to remove metadata
+
+## Remove metadata and optimize images
+
+Select a still JPG, PNG, WebP, or AVIF image and click **Remove metadata & optimize**. Choose AVIF for photos or WebP for graphics, then adjust quality and effort. Lossless encoding is available for both formats. Turn on **Resize** to set dimensions. **Keep aspect ratio** links width and height, while **Crop to fill** uses the exact dimensions and lets you adjust the framing.
+
+The preview encodes the image locally and shows the output size and percentage change before you click **Save clean AVIF** or **Save clean WebP**. That one action creates a new `name_optimized.avif` or `name_optimized.webp` beside the source, with a numbered suffix if the filename already exists. The saved copy uses the encoded preview with the source’s EXIF, IPTC, and XMP data omitted.
 
 ## Development
 

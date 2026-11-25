@@ -12,6 +12,8 @@ import "@fontsource-variable/public-sans";
 import "@fontsource/zilla-slab/600.css";
 import "@fontsource/zilla-slab/700.css";
 import "./App.css";
+import ImageExport from "./ImageExport";
+import { imageMime } from "./image-export";
 import {
   Metadata, Reveal, baseName, copyName, fileKind, fileType, folderOf,
   formatSize, removableFields, reveals, summary,
@@ -89,6 +91,7 @@ function App() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [exportPath, setExportPath] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<'none' | 'downloading' | 'ready'>('none');
@@ -235,6 +238,7 @@ function App() {
 
   const clearFiles = () => {
     setFiles([]);
+    setExportPath(null);
     setSelectedPath(null);
   };
 
@@ -242,13 +246,14 @@ function App() {
     const index = files.findIndex((f) => f.path === path);
     const rest = files.filter((f) => f.path !== path);
     setFiles((prev) => prev.filter((f) => f.path !== path));
+    if (exportPath === path) setExportPath(null);
     if (selectedPath === path) setSelectedPath(rest[Math.min(index, rest.length - 1)]?.path ?? null);
   };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Delete' && event.key !== 'Backspace') return;
-      if (!selectedPath || processing || showSettings || askUpdates) return;
+      if (!selectedPath || exportPath === selectedPath || processing || showSettings || askUpdates) return;
       if (event.target instanceof HTMLInputElement) return;
       event.preventDefault();
       removeFile(selectedPath);
@@ -258,6 +263,7 @@ function App() {
   });
 
   const selected = files.find((f) => f.path === selectedPath) ?? null;
+  const isExporting = selected !== null && exportPath === selected.path;
   const remaining = files.filter((f) => f.status !== 'cleaned' && !f.readError);
   const remainingFields = remaining.reduce((sum, f) => sum + fieldsToRemove(f, preservationOptions).length, 0);
 
@@ -273,19 +279,21 @@ function App() {
           <span className="brand-name">MetadataZero</span>
         </div>
         <div className="top-actions">
-          <div className="segmented" role="radiogroup" aria-label="Save mode">
-            {(['copy', 'overwrite'] as const).map((mode) => (
-              <button
-                key={mode}
-                role="radio"
-                aria-checked={saveMode === mode}
-                className={saveMode === mode ? 'selected' : ''}
-                onClick={() => setSaveMode(mode)}
-              >
-                {mode === 'copy' ? 'Keep originals' : 'Replace originals'}
-              </button>
-            ))}
-          </div>
+          {!isExporting && (
+            <div className="segmented" role="radiogroup" aria-label="Metadata removal save mode">
+              {(['copy', 'overwrite'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  role="radio"
+                  aria-checked={saveMode === mode}
+                  className={saveMode === mode ? 'selected' : ''}
+                  onClick={() => setSaveMode(mode)}
+                >
+                  {mode === 'copy' ? 'Keep originals' : 'Replace originals'}
+                </button>
+              ))}
+            </div>
+          )}
           <button className="btn" onClick={() => setShowSettings(true)}>Settings</button>
         </div>
       </header>
@@ -338,43 +346,57 @@ function App() {
                   selected={file.path === selectedPath}
                   count={fieldsToRemove(file, preservationOptions).length}
                   removable={!processing}
-                  onSelect={() => setSelectedPath(file.path)}
+                  onSelect={() => {
+                    if (selectedPath !== file.path) setExportPath(null);
+                    setSelectedPath(file.path);
+                  }}
                   onRemove={() => removeFile(file.path)}
                 />
               ))}
             </div>
 
-            <div className="file-list-foot">
-              {remaining.length > 0 ? (
-                <>
-                  <button
-                    className="btn-primary"
-                    disabled={processing || remaining.some((f) => f.loading)}
-                    onClick={() => cleanFiles(remaining)}
-                  >
-                    {processing ? 'Removing metadata…' : `Remove metadata from ${plural(remaining.length, 'file')}`}
-                  </button>
-                  <p className="caption">
-                    {saveMode === 'copy'
-                      ? <>Copies are saved as <strong>name_metadatazero.jpg</strong></>
-                      : 'Originals are replaced'}
-                  </p>
-                </>
-              ) : (
-                <button className="btn btn-large" onClick={clearFiles}>Clear list</button>
-              )}
-            </div>
+            {!isExporting && (
+              <div className="file-list-foot">
+                {remaining.length > 0 ? (
+                  <>
+                    <button
+                      className="btn-primary"
+                      disabled={processing || remaining.some((f) => f.loading)}
+                      onClick={() => cleanFiles(remaining)}
+                    >
+                      {processing ? 'Removing metadata…' : `Remove metadata from ${plural(remaining.length, 'file')}`}
+                    </button>
+                    <p className="caption">
+                      {saveMode === 'copy'
+                        ? <>Copies are saved as <strong>name_metadatazero.jpg</strong></>
+                        : 'Originals are replaced'}
+                    </p>
+                  </>
+                ) : (
+                  <button className="btn btn-large" onClick={clearFiles}>Clear list</button>
+                )}
+              </div>
+            )}
           </aside>
 
           <section className="detail">
-            {selected && (
+            {selected && (isExporting ? (
+              <ImageExport
+                key={selected.path}
+                path={selected.path}
+                name={selected.name}
+                onClose={() => setExportPath(null)}
+                showIn={SHOW_IN}
+              />
+            ) : (
               <FileDetail
                 file={selected}
                 fields={fieldsToRemove(selected, preservationOptions)}
                 processing={processing}
                 onClean={() => cleanFiles([selected])}
+                onExport={imageMime(selected.name) ? () => setExportPath(selected.path) : undefined}
               />
-            )}
+            ))}
           </section>
         </main>
       )}
@@ -479,11 +501,12 @@ function FileRow({ file, selected, count, removable, onSelect, onRemove }: {
   );
 }
 
-function FileDetail({ file, fields, processing, onClean }: {
+function FileDetail({ file, fields, processing, onClean, onExport }: {
   file: FileItem;
   fields: Array<[string, string]>;
   processing: boolean;
   onClean: () => void;
+  onExport?: () => void;
 }) {
   const cleaned = file.status === 'cleaned';
   const found: Reveal[] = file.metadata ? reveals(file.metadata) : [];
@@ -501,17 +524,24 @@ function FileDetail({ file, fields, processing, onClean }: {
           <h2>{file.name}</h2>
           <p className="note">{subtitle}</p>
         </div>
-        {cleaned ? (
-          <button className="btn btn-medium" onClick={() => revealItemInDir(file.savedTo ?? file.path)}>{SHOW_IN}</button>
-        ) : (
-          <button
-            className="btn btn-medium"
-            disabled={processing || file.loading || !!file.readError}
-            onClick={onClean}
-          >
-            Remove from this file
-          </button>
-        )}
+        <div className="detail-actions">
+          {onExport && (
+            <button className="btn-primary btn-medium" disabled={processing} onClick={onExport}>
+              Remove metadata &amp; optimize
+            </button>
+          )}
+          {cleaned ? (
+            <button className="btn btn-medium" onClick={() => revealItemInDir(file.savedTo ?? file.path)}>{SHOW_IN}</button>
+          ) : (
+            <button
+              className="btn btn-medium"
+              disabled={processing || file.loading || !!file.readError}
+              onClick={onClean}
+            >
+              {onExport ? 'Remove metadata only' : 'Remove from this file'}
+            </button>
+          )}
+        </div>
       </div>
 
       {file.loading ? (

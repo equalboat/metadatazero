@@ -1,5 +1,6 @@
 mod commands;
 mod exiftool;
+mod image_export;
 
 use exiftool::ExifToolWrapper;
 use std::path::Path;
@@ -157,6 +158,8 @@ pub fn run() {
             commands::read_files_metadata,
             commands::clean_file_metadata,
             commands::expand_paths,
+            image_export::read_export_image,
+            image_export::save_export_image,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

@@ -43,12 +43,19 @@ pub fn take_pending_files(pending: State<'_, crate::PendingFiles>) -> Vec<String
 // any other install would download an update it cannot apply. The Flatpak is built
 // without a bundle type and is updated by flatpak itself.
 #[tauri::command]
-pub fn updates_supported() -> bool {
+pub fn updates_supported(app: tauri::AppHandle) -> bool {
     use tauri::utils::{config::BundleType, platform::bundle_type};
     matches!(
         bundle_type(),
         Some(BundleType::App | BundleType::Nsis | BundleType::AppImage)
-    )
+    ) && app
+        .config()
+        .plugins
+        .0
+        .get("updater")
+        .and_then(|updater| updater.get("endpoints"))
+        .and_then(serde_json::Value::as_array)
+        .is_some_and(|endpoints| !endpoints.is_empty())
 }
 
 #[derive(Serialize)]

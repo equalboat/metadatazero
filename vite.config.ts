@@ -7,6 +7,8 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [react()],
+  worker: { format: "es" },
+  optimizeDeps: { exclude: ["@jsquash/avif", "@jsquash/webp"] },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
